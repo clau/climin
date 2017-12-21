@@ -33,7 +33,7 @@ if sys.platform == 'win32':
 from .adadelta import Adadelta
 from .adam import Adam
 from .asgd import Asgd
-from .bfgs import Bfgs, Lbfgs, Sbfgs
+from .bfgs import Bfgs, Lbfgs, Sbfgs, Ssvm, AdaQn
 from .cg import ConjugateGradient, NonlinearConjugateGradient
 from .gd import GradientDescent
 from .nes import Xnes

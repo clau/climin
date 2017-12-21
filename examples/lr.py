@@ -28,17 +28,28 @@ def d_loss_wrt_pars(parameters, inpt, targets):
     d_b[...] = (p - targets).mean(axis=0)
     return d_flat
 
-
 def loss(parameters, inpt, targets):
     predictions = predict(parameters, inpt)
     loss = -np.log(predictions) * targets
     return loss.sum(axis=1).mean()
 
-
 def main():
     # Hyper parameters.
-    optimizer = 'lbfgs'        # or use: ncg, lbfgs, rmsprop
-    batch_size = 10000
+    """
+    0/50 test loss: 2.39142
+    5/50 test loss: 0.502875
+    10/50 test loss: 0.380347
+    15/50 test loss: 0.336251
+    20/50 test loss: 0.322629
+    25/50 test loss: 0.312498
+    30/50 test loss: 0.298474
+    35/50 test loss: 0.290554
+    40/50 test loss: 0.283251
+    45/50 test loss: 0.27866
+    50/50 test loss: 0.272426
+    """
+    optimizer = 'adaqn'        # or use: ncg, lbfgs, rmsprop
+    batch_size = 256
 
     flat, (w, b) = climin.util.empty_with_views(tmpl)
     climin.initialize.randomize_normal(flat, 0, 0.1)
@@ -70,15 +81,25 @@ def main():
         batches_per_pass = X.shape[0] / batch_size
 
     if optimizer == 'gd':
-        opt = climin.GradientDescent(flat, d_loss_wrt_pars, steprate=0.1,
+        opt = climin.GradientDescent(flat, d_loss_wrt_pars, step_rate=0.1,
                                      momentum=.95, args=args)
     elif optimizer == 'lbfgs':
         opt = climin.Lbfgs(flat, loss, d_loss_wrt_pars, args=args)
+
+    elif optimizer == 'bfgs':
+        opt = climin.Bfgs(flat, loss, d_loss_wrt_pars, args=args)
+    
+    elif optimizer == 'adaqn':
+        opt = climin.AdaQn(flat, loss, d_loss_wrt_pars, args=args)
+
+    elif optimizer == 'ssvm':
+        opt = climin.Ssvm(flat, loss, d_loss_wrt_pars, args=args)
+
     elif optimizer == 'ncg':
         opt = climin.NonlinearConjugateGradient(flat, loss, d_loss_wrt_pars,
                                                 args=args)
     elif optimizer == 'rmsprop':
-        opt = climin.RmsProp(flat, d_loss_wrt_pars, steprate=1e-4, decay=0.9,
+        opt = climin.RmsProp(flat, d_loss_wrt_pars, step_rate=1e-4, decay=0.9,
                              args=args)
     elif optimizer == 'rprop':
         opt = climin.Rprop(flat, d_loss_wrt_pars, args=args)
@@ -89,8 +110,8 @@ def main():
     for info in opt:
         if info['n_iter'] % batches_per_pass == 0:
             print '%i/%i test loss: %g' % (
-                info['n_iter'], batches_per_pass * 10, loss(flat, VX, VZ))
-        if info['n_iter'] >= 10 * batches_per_pass:
+                info['n_iter'], batches_per_pass * 100, loss(flat, VX, VZ))
+        if info['n_iter'] >= 100 * batches_per_pass:
             break
 
 
